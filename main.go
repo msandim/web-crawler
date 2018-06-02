@@ -3,28 +3,22 @@ package main
 import (
 	"flag"
 	"fmt"
+	"webcrawler/crawler"
 )
 
-func parseArguments() (domain string, maxDepth int) {
+func parseArguments() (nWorkers int, domain string, maxDepth int) {
+	flag.IntVar(&nWorkers, "nworkers", 4, "the number of workers to crawl the domain")
 	flag.StringVar(&domain, "domain", "", "the domain to crawl")
 	flag.IntVar(&maxDepth, "depth", 5, "the maximum depth of domain crawling")
 	flag.Parse()
 
-	// TODO: check if the domain is valid
-
+	// TODO: check if the domain is valid, and the ints > 0
 	return
 }
 
 func main() {
-	domain, maxDepth := parseArguments()
+	nWorkers, domain, maxDepth := parseArguments()
 
-	fmt.Println("domain: ", domain, " maxDepth: ", maxDepth)
-
-	lol()
-
-	// Agora tenho de analisar
-	// get page do domain
-	// get urls
-	// dec depth
-
+	fmt.Println("nworkers: ", nWorkers, " domain: ", domain, " maxDepth: ", maxDepth)
+	crawler.New(nWorkers, domain, maxDepth)
 }

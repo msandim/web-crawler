@@ -5,53 +5,68 @@ import (
 	"sync"
 )
 
-type job interface {
-	process() jobResult
+// Job is
+type Job interface {
+	Process() JobResult
 }
 
-type jobResult interface {
-	process()
+// JobGenerator is
+/*
+type JobGenerator interface {
+	Generate(JobResult) []Job
+}
+*/
+
+// JobResult is
+type JobResult interface {
+	Process()
 }
 
-// WorkerPool is blablabla
+// WorkerPool is
 type WorkerPool struct {
 	nWorkers   int
-	jobs       chan job
-	jobResults chan jobResult
+	jobs       chan Job
+	jobResults chan JobResult
 	waitGroup  *sync.WaitGroup
 }
 
 // New generates a WorkerPool struct and runs "nWorkers" workers
-func New(nWorkers int) *WorkerPool {
+func New(nWorkers int, jobs chan Job, jobResults chan JobResult) *WorkerPool {
 
 	pool := &WorkerPool{
 		nWorkers:   nWorkers,
-		jobs:       make(chan job, nWorkers),
-		jobResults: make(chan jobResult, nWorkers),
+		jobs:       jobs,
+		jobResults: jobResults,
 		waitGroup:  &sync.WaitGroup{},
 	}
 
+	return pool
+}
+
+// Run initiates the Worker Pool:
+func (pool *WorkerPool) lRun() {
 	// Create a go routine for each worker:
-	for i := 0; i < nWorkers; i++ {
+	for i := 0; i < pool.nWorkers; i++ {
 		pool.waitGroup.Add(1)
 		go workerRoutine(pool)
 	}
 
 	// Create a go routine to process results:
 	go resultRoutine(pool)
-
-	return pool
 }
 
 func workerRoutine(pool *WorkerPool) {
-
 	// While there are jobs to process:
+
 	for job := range pool.jobs {
-		result := job.process()
-		fmt.Println(result)
+		result := job.Process()
+		fmt.Println("Processed job", result)
+
+		pool.jobResults <- result
 	}
 
 	// Announce that this worker finished:
+	fmt.Println("FIZ DONE")
 	pool.waitGroup.Done()
 }
 
@@ -69,11 +84,12 @@ func (pool *WorkerPool) Wait() {
 	close(pool.jobResults)
 }
 
-/*
+// AddJob adds a job to the pool of workers:
 func (pool *WorkerPool) AddJob(job Job) {
-
+	pool.jobs <- job
 }
-*/
+
+//func (pool *WorkerPool) EndJobs
 
 /*
 func worker(wg *sync.WaitGroup) {
