@@ -64,6 +64,7 @@ func workerRoutine(pool *WorkerPool) {
 		// Add more jobs to chan jobs:
 		result := job.Process()
 		result.Process()
+		pool.jobResults <- result
 		pool.jobsActive.Done()
 	}
 }
