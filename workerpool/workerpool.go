@@ -1,7 +1,6 @@
 package workerpool
 
 import (
-	"fmt"
 	"sync"
 )
 
@@ -23,7 +22,7 @@ type WorkerPool struct {
 	jobsActive *sync.WaitGroup
 }
 
-var mutex sync.Mutex
+var nJobsActive sync.Mutex
 
 // New generates a WorkerPool struct and runs "nWorkers" workers
 func New(nWorkers int, jobs chan Job, jobResults chan JobResult) *WorkerPool {
@@ -44,59 +43,35 @@ func (pool *WorkerPool) Run() {
 	for i := 0; i < pool.nWorkers; i++ {
 		go workerRoutine(pool)
 	}
+}
 
-	// Create a go routine to process results:
-	go resultRoutine(pool)
+// AddJob adds a job to the pool of workers:
+func (pool *WorkerPool) AddJob(job Job) {
+	pool.jobsActive.Add(1)
+
+	select {
+	case pool.jobs <- job: // some other worker can do it:
+	default: // do the job synchronously
+		result := job.Process()
+		result.Process()
+		pool.jobsActive.Done()
+	}
 }
 
 func workerRoutine(pool *WorkerPool) {
 	// While there are jobs to process:
 	for job := range pool.jobs {
+		// Add more jobs to chan jobs:
 		result := job.Process()
+		result.Process()
 		pool.jobsActive.Done()
-		pool.jobResults <- result
 	}
 }
 
+/*
 func resultRoutine(pool *WorkerPool) {
 	for result := range pool.jobResults {
-		fmt.Println("Processed result from job", result)
+		result.Process()
 	}
-
-	//done <- true
-}
-
-// Wait waits until all the workers finished and returns:
-/*
-func (pool *WorkerPool) Wait() {
-	pool.workersActive.Wait()
-	close(pool.jobResults)
 }
 */
-
-// AddJob adds a job to the pool of workers:
-func (pool *WorkerPool) AddJob(job Job) {
-	mutex.Lock()
-	pool.jobsActive.Add(1)
-
-	select {
-	case pool.jobs <- job: // some other worker can do it:
-	default: // this routine will need to do that job:
-		result := job.Process()
-		pool.jobsActive.Done()
-		pool.jobResults <- result
-	}
-
-	mutex.Unlock()
-}
-
-//func (pool *WorkerPool) EndJobs
-
-/*
-func worker(wg *sync.WaitGroup) {
-	for job := range jobs {
-		output := Result{job, digits(job.randomno)}
-		results <- output
-	}
-	wg.Done()
-}*/
