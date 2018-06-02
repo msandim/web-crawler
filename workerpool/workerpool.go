@@ -1,6 +1,7 @@
 package workerpool
 
 import (
+	"fmt"
 	"sync"
 )
 
@@ -11,15 +12,16 @@ type Job interface {
 
 // JobResult is
 type JobResult interface {
+	GetJob() Job
 	Process()
 }
 
 // WorkerPool is
 type WorkerPool struct {
-	nWorkers   int
-	jobs       chan Job
-	jobResults chan JobResult
-	jobsActive *sync.WaitGroup
+	nWorkers     int
+	pendingJobs  chan Job
+	finishedJobs chan JobResult
+	jobsActive   *sync.WaitGroup
 }
 
 var nJobsActive sync.Mutex
@@ -28,10 +30,10 @@ var nJobsActive sync.Mutex
 func New(nWorkers int, jobs chan Job, jobResults chan JobResult) *WorkerPool {
 
 	pool := &WorkerPool{
-		nWorkers:   nWorkers,
-		jobs:       jobs,
-		jobResults: jobResults,
-		jobsActive: &sync.WaitGroup{},
+		nWorkers:     nWorkers,
+		pendingJobs:  jobs,
+		finishedJobs: jobResults,
+		jobsActive:   &sync.WaitGroup{},
 	}
 
 	return pool
@@ -43,15 +45,19 @@ func (pool *WorkerPool) Run() {
 	for i := 0; i < pool.nWorkers; i++ {
 		go workerRoutine(pool)
 	}
+
+	go checkEndRoutine(pool)
 }
 
 // AddJob adds a job to the pool of workers:
 func (pool *WorkerPool) AddJob(job Job) {
+
 	pool.jobsActive.Add(1)
 
 	select {
-	case pool.jobs <- job: // some other worker can do it:
-	default: // do the job synchronously
+	case pool.pendingJobs <- job: // some other worker can do it:
+
+	default: // if the channel is full, do the job synchronously
 		result := job.Process()
 		result.Process()
 		pool.jobsActive.Done()
@@ -60,19 +66,17 @@ func (pool *WorkerPool) AddJob(job Job) {
 
 func workerRoutine(pool *WorkerPool) {
 	// While there are jobs to process:
-	for job := range pool.jobs {
+	for job := range pool.pendingJobs {
 		// Add more jobs to chan jobs:
 		result := job.Process()
 		result.Process()
-		pool.jobResults <- result
+		pool.finishedJobs <- result
 		pool.jobsActive.Done()
 	}
 }
 
-/*
-func resultRoutine(pool *WorkerPool) {
-	for result := range pool.jobResults {
-		result.Process()
-	}
+func checkEndRoutine(pool *WorkerPool) {
+	pool.jobsActive.Wait()
+	fmt.Println("End of work, closing")
+	close(pool.pendingJobs)
 }
-*/

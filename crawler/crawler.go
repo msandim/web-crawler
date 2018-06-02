@@ -7,9 +7,9 @@ import (
 // Crawler is
 type Crawler struct {
 	// Parameters regarding the pool, with access to the jobs and results channel
-	pool    *workerpool.WorkerPool
-	jobs    chan workerpool.Job
-	results chan workerpool.JobResult
+	pool        *workerpool.WorkerPool
+	pendingURLs chan workerpool.Job
+	results     chan workerpool.JobResult
 
 	// Parameters related to the crawling process:
 	domain      string
@@ -23,7 +23,7 @@ func New(nWorkers int, domain string, maxDepth int) *Crawler {
 	results := make(chan workerpool.JobResult, 10)
 	return &Crawler{
 		pool:        workerpool.New(nWorkers, jobs, results),
-		jobs:        jobs,
+		pendingURLs: jobs,
 		results:     results,
 		domain:      domain,
 		maxDepth:    maxDepth,
@@ -37,16 +37,19 @@ func (crawler *Crawler) Run() {
 	crawler.pool.Run()
 
 	// Start the first job: crawl the main page of the domain:
-	crawler.pool.AddJob(&crawlerJob{url: crawler.domain})
+	crawler.pool.AddJob(&crawlerJob{
+		url:  crawler.domain,
+		pool: crawler.pool,
+	})
 	crawler.checkedUrls[crawler.domain] = true
 
-	go crawler.onJobProcessed()
+	go onURLCrawled(crawler)
 }
 
-// onJobProcessed is a routine that iterates over the results returned by the Worker Pool
+// onUrlCrawled is a routine that iterates over the results returned by the Worker Pool
 // and generates new crawling tasks for the Workers.
 // In this case, new urls to crawl that haven't been checked before
-func (crawler *Crawler) onJobProcessed() {
+func onURLCrawled(crawler *Crawler) {
 	for result := range crawler.results {
 		jobResult := result.(*crawlerJobResult)
 

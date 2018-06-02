@@ -6,20 +6,25 @@ import (
 )
 
 type crawlerJob struct {
-	url string
+	url  string
+	pool *workerpool.WorkerPool
 }
 
 type crawlerJobResult struct {
 	urls []string
-}
-
-func (job *crawlerJobResult) Process() {
-	fmt.Println("Resultado processado")
-	//time.Sleep(2 * time.Second)
+	job  *crawlerJob
 }
 
 func (job *crawlerJob) Process() workerpool.JobResult {
 	fmt.Println("Job processado")
-	//time.Sleep(3 * time.Second)
-	return &crawlerJobResult{}
+	result := crawlerJobResult{job: job}
+	return &result
+}
+
+func (result *crawlerJobResult) Process() {
+	fmt.Println("Resultado processado")
+}
+
+func (result *crawlerJobResult) GetJob() workerpool.Job {
+	return result.job
 }
