@@ -10,13 +10,6 @@ type Job interface {
 	Process() JobResult
 }
 
-// JobGenerator is
-/*
-type JobGenerator interface {
-	Generate(JobResult) []Job
-}
-*/
-
 // JobResult is
 type JobResult interface {
 	Process()
@@ -29,6 +22,8 @@ type WorkerPool struct {
 	jobResults chan JobResult
 	jobsActive *sync.WaitGroup
 }
+
+var mutex sync.Mutex
 
 // New generates a WorkerPool struct and runs "nWorkers" workers
 func New(nWorkers int, jobs chan Job, jobResults chan JobResult) *WorkerPool {
@@ -57,9 +52,8 @@ func (pool *WorkerPool) Run() {
 func workerRoutine(pool *WorkerPool) {
 	// While there are jobs to process:
 	for job := range pool.jobs {
-		pool.jobsActive.Add(1) // job being done:
 		result := job.Process()
-		//fmt.Println("Processed job", result)
+		pool.jobsActive.Done()
 		pool.jobResults <- result
 	}
 }
@@ -82,8 +76,18 @@ func (pool *WorkerPool) Wait() {
 
 // AddJob adds a job to the pool of workers:
 func (pool *WorkerPool) AddJob(job Job) {
+	mutex.Lock()
 	pool.jobsActive.Add(1)
-	pool.jobs <- job
+
+	select {
+	case pool.jobs <- job: // some other worker can do it:
+	default: // this routine will need to do that job:
+		result := job.Process()
+		pool.jobsActive.Done()
+		pool.jobResults <- result
+	}
+
+	mutex.Unlock()
 }
 
 //func (pool *WorkerPool) EndJobs
