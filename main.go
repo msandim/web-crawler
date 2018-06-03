@@ -20,5 +20,6 @@ func main() {
 	nWorkers, domain, maxDepth := parseArguments()
 
 	fmt.Println("nworkers: ", nWorkers, " domain: ", domain, " maxDepth: ", maxDepth)
-	crawler.New(nWorkers, domain, maxDepth)
+	crawler := crawler.New(nWorkers, domain, maxDepth)
+	crawler.Run()
 }

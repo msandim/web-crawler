@@ -13,15 +13,14 @@ type Job interface {
 // JobResult is
 type JobResult interface {
 	GetJob() Job
-	Process()
 }
 
 // WorkerPool is
 type WorkerPool struct {
-	nWorkers     int
-	pendingJobs  chan Job
-	finishedJobs chan JobResult
-	jobsActive   *sync.WaitGroup
+	nWorkers      int
+	pendingJobs   chan Job
+	finishedJobs  chan JobResult
+	workersActive *sync.WaitGroup
 }
 
 var nJobsActive sync.Mutex
@@ -30,10 +29,10 @@ var nJobsActive sync.Mutex
 func New(nWorkers int, jobs chan Job, jobResults chan JobResult) *WorkerPool {
 
 	pool := &WorkerPool{
-		nWorkers:     nWorkers,
-		pendingJobs:  jobs,
-		finishedJobs: jobResults,
-		jobsActive:   &sync.WaitGroup{},
+		nWorkers:      nWorkers,
+		pendingJobs:   jobs,
+		finishedJobs:  jobResults,
+		workersActive: &sync.WaitGroup{},
 	}
 
 	return pool
@@ -43,25 +42,29 @@ func New(nWorkers int, jobs chan Job, jobResults chan JobResult) *WorkerPool {
 func (pool *WorkerPool) Run() {
 	// Create a go routine for each worker:
 	for i := 0; i < pool.nWorkers; i++ {
+		pool.workersActive.Add(1)
 		go workerRoutine(pool)
 	}
 
-	go checkEndRoutine(pool)
+	go waitForWorkersRoutine(pool)
 }
 
 // AddJob adds a job to the pool of workers:
 func (pool *WorkerPool) AddJob(job Job) {
-
-	pool.jobsActive.Add(1)
-
 	select {
 	case pool.pendingJobs <- job: // some other worker can do it:
 
 	default: // if the channel is full, do the job synchronously
 		result := job.Process()
-		result.Process()
-		pool.jobsActive.Done()
+		pool.finishedJobs <- result
 	}
+}
+
+// EndJobs tells the Worker Pool that there are no more jobs incoming
+// This internally closes the channel for incoming jobs
+func (pool *WorkerPool) EndJobs() {
+	fmt.Println("fechei pending jobs")
+	close(pool.pendingJobs)
 }
 
 func workerRoutine(pool *WorkerPool) {
@@ -69,14 +72,15 @@ func workerRoutine(pool *WorkerPool) {
 	for job := range pool.pendingJobs {
 		// Add more jobs to chan jobs:
 		result := job.Process()
-		result.Process()
 		pool.finishedJobs <- result
-		pool.jobsActive.Done()
 	}
+
+	pool.workersActive.Done()
 }
 
-func checkEndRoutine(pool *WorkerPool) {
-	pool.jobsActive.Wait()
-	fmt.Println("End of work, closing")
-	close(pool.pendingJobs)
+func waitForWorkersRoutine(pool *WorkerPool) {
+	fmt.Println("à espera que os workers terminem")
+	pool.workersActive.Wait()
+	fmt.Println("os workers terminaram")
+	close(pool.finishedJobs)
 }
