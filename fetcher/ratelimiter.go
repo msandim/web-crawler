@@ -7,7 +7,7 @@ type RateLimiter struct {
 	semaphore chan bool
 }
 
-// New generates a RateLimiter with a given capacity.
+// NewNewRateLimiter generates a RateLimiter with a given capacity.
 func NewRateLimiter(capacity int) *RateLimiter {
 	semaphore := make(chan bool, capacity)
 
