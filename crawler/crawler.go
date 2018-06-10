@@ -66,7 +66,7 @@ func onURLCrawled(crawler *Crawler) {
 		//fmt.Println(result.GetJob())
 		//fmt.Fprintln(os.Stderr, "crawler::onURLCrawled() - Processed: ", result.GetJob())
 		job := result.GetJob().(*crawlerJob)
-		fmt.Println(job.url)
+		fmt.Println(". ", job.url)
 
 		// Get the result from crawling job and increment the number of URLs crawled:
 		jobResult := result.(*crawlerJobResult)
@@ -75,7 +75,7 @@ func onURLCrawled(crawler *Crawler) {
 		// Iterate over the URLs on the page we obtained:
 		for _, url := range jobResult.urls {
 
-			fmt.Println("-> ", url)
+			fmt.Println("  -> ", url)
 
 			// If we never crawled that url, then we do it now:
 			if !crawler.checkedUrls[url] {
