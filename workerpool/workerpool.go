@@ -76,11 +76,12 @@ func workerRoutine(pool *WorkerPool) {
 	}
 
 	pool.workersActive.Done()
+	//fmt.Println("finished worker routine")
 }
 
 func waitForWorkersRoutine(pool *WorkerPool) {
-	fmt.Println("à espera que os workers terminem")
+	//fmt.Println("à espera que os workers terminem")
 	pool.workersActive.Wait()
-	fmt.Println("os workers terminaram")
+	//fmt.Println("os workers terminaram")
 	close(pool.finishedJobs)
 }
