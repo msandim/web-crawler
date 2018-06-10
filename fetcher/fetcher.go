@@ -53,7 +53,7 @@ func (fetcher *HTTPFetcher) Fetch(urlArg string) []string {
 
 		switch {
 		case tokenType == html.ErrorToken: // Reached the end of the document
-			fmt.Fprintln(os.Stderr, "HTTPFetcher::fetch() - Reached the end of page: ", urlArg)
+			//fmt.Fprintln(os.Stderr, "HTTPFetcher::fetch() - Reached the end of page: ", urlArg)
 			return urls
 		case tokenType == html.StartTagToken:
 			token := tokenizer.Token()

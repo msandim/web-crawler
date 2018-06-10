@@ -1,8 +1,6 @@
 package crawler
 
 import (
-	"fmt"
-	"os"
 	"webcrawler/fetcher"
 	"webcrawler/workerpool"
 )
@@ -17,11 +15,11 @@ type crawlerJobResult struct {
 }
 
 func (job *crawlerJob) Process() workerpool.JobResult {
-	fmt.Fprintln(os.Stderr, "crawlerJob::Process() - Starting to process: "+job.url)
+	//fmt.Fprintln(os.Stderr, "- crawlerJob::Process() - Starting to process: "+job.url)
 	fetcher := &fetcher.HTTPFetcher{}
 	obtainedURLs := fetcher.Fetch(job.url)
 	result := &crawlerJobResult{urls: obtainedURLs, job: job}
-	fmt.Fprintln(os.Stderr, "crawlerJob::Process() - Ending to process: "+job.url)
+	//fmt.Fprintln(os.Stderr, "- crawlerJob::Process() - Ending to process: "+job.url)
 	return result
 
 	/* 	var result crawlerJobResult

@@ -24,8 +24,8 @@ type Crawler struct {
 
 // New creates a Crawler struct given the arguments and returns a pointer to it.
 func New(nWorkers int, domain string, maxDepth int) *Crawler {
-	jobs := make(chan workerpool.Job, 10)
-	results := make(chan workerpool.JobResult, 10)
+	jobs := make(chan workerpool.Job)
+	results := make(chan workerpool.JobResult)
 	return &Crawler{
 		pool: workerpool.New(nWorkers, jobs, results),
 		//pendingURLs: jobs,
@@ -73,7 +73,7 @@ func onURLCrawled(crawler *Crawler) {
 
 			// If we never crawled that url, then we do it now:
 			if !crawler.checkedUrls[url] {
-				fmt.Fprintln(os.Stderr, "crawler::onURLCrawled() - Added for processing: ", result.GetJob(), " - ", url)
+				//fmt.Fprintln(os.Stderr, "crawler::onURLCrawled() - Added for processing: ", result.GetJob(), " - ", url)
 				crawler.pool.AddJob(&crawlerJob{url: url})
 				crawler.checkedUrls[url] = true
 			}
