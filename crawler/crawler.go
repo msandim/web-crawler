@@ -80,7 +80,8 @@ func onURLCrawled(crawler *Crawler) {
 		// if all the URLs launched for crawling had their crawling processes ended:
 		if len(crawler.checkedUrls) == crawler.nURLsCrawled {
 			crawler.pool.EndJobs()
-			crawler.finishedFlag <- true
 		}
 	}
+
+	crawler.finishedFlag <- true
 }
