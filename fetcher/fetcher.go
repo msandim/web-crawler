@@ -31,13 +31,14 @@ func NewHTTPFetcher(rateLimit int) *HTTPFetcher {
 
 // Fetch sends an HTTP GET to fetch the contents of an url:
 func (fetcher *HTTPFetcher) Fetch(urlArg string) []string {
-	var urls []string
+	// URLs found in this page: avoid duplicates
+	urlsFound := make(map[string]bool)
 
 	// Parse the url we're trying to crawl, by extracting its url and path without url fragments:
 	originalURLParsed, err := url.Parse(urlArg)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "HTTPFetcher::fetch() - Error: failed to parse the URL to fetch: ", urlArg)
-		return urls
+		return []string{}
 	}
 
 	// Define a custom http client that has a timeout and get the HTML code:
@@ -47,11 +48,11 @@ func (fetcher *HTTPFetcher) Fetch(urlArg string) []string {
 	fetcher.rateLimiter.Free()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "HTTPFetcher::fetch() - Error: Failed to GET: ", urlArg)
-		return urls
+		return []string{}
 	}
 	if resp.StatusCode != http.StatusOK {
 		fmt.Fprintln(os.Stderr, "HTTPFetcher::fetch() - Error: Failed to GET: ", urlArg, " with error code: ", resp.Status)
-		return urls
+		return []string{}
 	}
 
 	body := resp.Body
@@ -64,7 +65,7 @@ func (fetcher *HTTPFetcher) Fetch(urlArg string) []string {
 		switch {
 		case tokenType == html.ErrorToken: // Reached the end of the document
 			//fmt.Fprintln(os.Stderr, "HTTPFetcher::fetch() - Reached the end of page: ", urlArg)
-			return urls
+			return mapToSlice(urlsFound)
 		case tokenType == html.StartTagToken:
 			token := tokenizer.Token()
 
@@ -89,13 +90,17 @@ func (fetcher *HTTPFetcher) Fetch(urlArg string) []string {
 			// Only crawl this new URL its domain is empty ("/otherpage") or if the domain of the url is the same:
 			if extractedURLParsed.Hostname() == "" || extractedURLParsed.Hostname() == originalURLParsed.Hostname() {
 				extractedURLParsed.Host = originalURLParsed.Host
-				extractedURLParsed.Fragment = "" // delete fragments (e.g. #)
+				extractedURLParsed.Fragment = "" // delete fragments (e.g. #paragraph1)
+				extractedURLParsed.RawQuery = "" // delete queries (?lang=en)
 
 				if extractedURLParsed.Scheme == "" {
 					extractedURLParsed.Scheme = "http"
 				}
 
-				urls = append(urls, extractedURLParsed.String())
+				// Only add to the map of found urls if we didn't add before:
+				if _, ok := urlsFound[extractedURLParsed.String()]; !ok {
+					urlsFound[extractedURLParsed.String()] = true
+				}
 			}
 
 		}
@@ -111,4 +116,12 @@ func getHref(token html.Token) (url string, ok bool) {
 		}
 	}
 	return "", false
+}
+
+func mapToSlice(urlMap map[string]bool) (urls []string) {
+	urls = make([]string, 0, len(urlMap))
+	for u := range urlMap {
+		urls = append(urls, u)
+	}
+	return
 }
