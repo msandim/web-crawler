@@ -35,7 +35,7 @@ func (fetcher *HTTPFetcher) Fetch(urlArg string) []string {
 	urlsFound := make(map[string]bool)
 
 	// Parse the url we're trying to crawl, by extracting its url and path without url fragments:
-	originalURLParsed, err := url.Parse(urlArg)
+	parentURLParsed, err := url.Parse(urlArg)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "HTTPFetcher::fetch() - Error: failed to parse the URL to fetch: ", urlArg)
 		return []string{}
@@ -75,41 +75,49 @@ func (fetcher *HTTPFetcher) Fetch(urlArg string) []string {
 			}
 
 			// Extract the href value, if there is one:
-			extractedURL, ok := getHref(token)
+			childURL, ok := getHref(token)
 			if !ok {
 				fmt.Fprintln(os.Stderr, "HTTPFetcher::fetch() - Warning: <a> detected but no href present")
 				continue
 			}
 
-			extractedURLParsed, err := url.Parse(extractedURL)
+			childURLParsed, err := url.Parse(childURL)
 			if err != nil {
 				fmt.Fprintln(os.Stderr, "HTTPFetcher::fetch() - Error: failed to parse the URL found: ", urlArg)
 				continue
 			}
 
-			// Only crawl this new URL its domain is empty ("/otherpage") or if the domain of the url is the same:
-			if extractedURLParsed.Hostname() == "" || extractedURLParsed.Hostname() == originalURLParsed.Hostname() {
-				extractedURLParsed.Host = originalURLParsed.Host
-				extractedURLParsed.Fragment = "" // delete fragments (e.g. #paragraph1)
-				extractedURLParsed.RawQuery = "" // delete queries (?lang=en)
-
-				// We're only interested in http, https and or in links with no scheme (avoid tel e mailto):
-				if extractedURLParsed.Scheme != "http" && extractedURLParsed.Scheme != "https" && extractedURLParsed.Scheme != "" {
-					continue
-				}
-
-				if extractedURLParsed.Scheme == "" {
-					extractedURLParsed.Scheme = "http"
-				}
-
-				// Only add to the map of found urls if we didn't add before:
-				if _, ok := urlsFound[extractedURLParsed.String()]; !ok {
-					urlsFound[extractedURLParsed.String()] = true
-				}
+			if !isChildURLValid(childURLParsed, *parentURLParsed) {
+				continue
 			}
 
+			// Only add to the map of found urls if we didn't add before:
+			if _, ok := urlsFound[childURLParsed.String()]; !ok {
+				urlsFound[childURLParsed.String()] = true
+			}
 		}
 	}
+}
+
+func isChildURLValid(childURL *url.URL, fatherURL url.URL) bool {
+	// Only crawl this new URL its domain is empty (e.g. "/otherpage") or if the domain of the url is the same:
+	if childURL.Hostname() == "" || childURL.Hostname() == fatherURL.Hostname() {
+		childURL.Host = fatherURL.Host
+		childURL.Fragment = "" // delete fragments (e.g. #paragraph1)
+		childURL.RawQuery = "" // delete queries (?lang=en)
+
+		// We're only interested in http, https and or in links with no scheme (avoid tel e mailto):
+		if childURL.Scheme != "http" && childURL.Scheme != "https" && childURL.Scheme != "" {
+			return false
+		}
+
+		if childURL.Scheme == "" {
+			childURL.Scheme = "http"
+		}
+
+		return true
+	}
+	return false
 }
 
 // getHref gets the href attribute from an <a> token
