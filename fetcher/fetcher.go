@@ -93,6 +93,11 @@ func (fetcher *HTTPFetcher) Fetch(urlArg string) []string {
 				extractedURLParsed.Fragment = "" // delete fragments (e.g. #paragraph1)
 				extractedURLParsed.RawQuery = "" // delete queries (?lang=en)
 
+				// We're only interested in http, https and or in links with no scheme (avoid tel e mailto):
+				if extractedURLParsed.Scheme != "http" && extractedURLParsed.Scheme != "https" && extractedURLParsed.Scheme != "" {
+					continue
+				}
+
 				if extractedURLParsed.Scheme == "" {
 					extractedURLParsed.Scheme = "http"
 				}
