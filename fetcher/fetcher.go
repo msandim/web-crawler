@@ -1,7 +1,6 @@
 package fetcher
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -23,23 +22,25 @@ type HTTPFetcher struct {
 }
 
 // Fetch sends an HTTP GET to fetch the contents of an url:
-func (fetcher *HTTPFetcher) Fetch(url string) []string {
+func (fetcher *HTTPFetcher) Fetch(urlArg string) []string {
 	var urls []string
 
-	// Get the domain of the url we need to crawl:
-	domain, err := getDomain(url)
+	// Parse the url we're trying to crawl, by extracting its url and path without url fragments:
+	originalURLParsed, err := url.Parse(urlArg)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintln(os.Stderr, "HTTPFetcher::fetch() - Error: failed to parse the URL to fetch: ", urlArg)
 		return urls
 	}
 
 	// Define a custom http client that has a timeout and get the HTML code:
-	var httpClient = &http.Client{
-		Timeout: time.Second * 10,
-	}
-	resp, err := httpClient.Get(url)
+	var httpClient = &http.Client{Timeout: 10 * time.Second}
+	resp, err := httpClient.Get(urlArg)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "HTTPFetcher::fetch() - Error: Failed to GET: \""+url+"\"")
+		fmt.Fprintln(os.Stderr, "HTTPFetcher::fetch() - Error: Failed to GET: ", urlArg)
+		return urls
+	}
+	if resp.StatusCode != http.StatusOK {
+		fmt.Fprintln(os.Stderr, "HTTPFetcher::fetch() - Error: Failed to GET: ", urlArg, " with error code: "+resp.Status)
 		return urls
 	}
 
@@ -52,7 +53,7 @@ func (fetcher *HTTPFetcher) Fetch(url string) []string {
 
 		switch {
 		case tokenType == html.ErrorToken: // Reached the end of the document
-			fmt.Println("HTTPFetcher::fetch() - Reached the end of page: " + url)
+			fmt.Fprintln(os.Stderr, "HTTPFetcher::fetch() - Reached the end of page: ", urlArg)
 			return urls
 		case tokenType == html.StartTagToken:
 			token := tokenizer.Token()
@@ -63,23 +64,35 @@ func (fetcher *HTTPFetcher) Fetch(url string) []string {
 			}
 
 			// Extract the href value, if there is one:
-			url, ok := getHref(token)
+			extractedURL, ok := getHref(token)
 			if !ok {
 				fmt.Fprintln(os.Stderr, "HTTPFetcher::fetch() - Warning: <a> detected but no href present")
 				continue
 			}
 
-			// Check if the url belongs to the domain:
-			if !belongsToDomain(url, domain) {
+			extractedURLParsed, err := url.Parse(extractedURL)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "HTTPFetcher::fetch() - Error: failed to parse the URL found: ", urlArg)
 				continue
 			}
 
-			urls = append(urls, url)
+			// Only crawl this new URL its domain is empty ("/otherpage") or if the domain of the url is the same:
+			if extractedURLParsed.Hostname() == "" || extractedURLParsed.Hostname() == originalURLParsed.Hostname() {
+				extractedURLParsed.Host = originalURLParsed.Host
+				extractedURLParsed.Fragment = "" // delete fragments (e.g. #)
+
+				if extractedURLParsed.Scheme == "" {
+					extractedURLParsed.Scheme = "http"
+				}
+
+				urls = append(urls, extractedURLParsed.String())
+			}
+
 		}
 	}
 }
 
-// Helper function that gets the href attribute from an <a> token
+// getHref gets the href attribute from an <a> token
 func getHref(token html.Token) (url string, ok bool) {
 	// Iterate over all of the Token's attributes until we find an "href":
 	for _, v := range token.Attr {
@@ -90,21 +103,12 @@ func getHref(token html.Token) (url string, ok bool) {
 	return "", false
 }
 
-func getDomain(urlArg string) (string, error) {
+/*
+func parseURL(urlArg string) (domain, path string, err error) {
 	u, err := url.Parse(urlArg)
 	if err != nil {
-		return "", errors.New("getDomain() - Error: failed to get domain from url (" + urlArg + ")")
+		return "", "", errors.New("fetcher::parseURL() - Error: failed to parse url: " + urlArg)
 	}
-	return u.Hostname(), nil
+	return u.Hostname(), u.EscapedPath(), nil
 }
-
-// belongsToDomain checks if the domain of the "url" argument is the same as "domain"
-// if the "url" argument has an invalid domain, it returns false
-func belongsToDomain(url, domain string) bool {
-	urlDomain, err := getDomain(url)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return false
-	}
-	return domain == urlDomain
-}
+*/

@@ -2,6 +2,7 @@ package crawler
 
 import (
 	"fmt"
+	"os"
 	"webcrawler/workerpool"
 )
 
@@ -60,7 +61,8 @@ func onURLCrawled(crawler *Crawler) {
 	//fmt.Println("crawler::onURLCrawled() - Vou começar a receber resultados")
 	for result := range crawler.results {
 
-		fmt.Println("crawler::onURLCrawled() - Processed: ", result.GetJob())
+		fmt.Println(result.GetJob())
+		fmt.Fprintln(os.Stderr, "crawler::onURLCrawled() - Processed: ", result.GetJob())
 
 		// Get the result from crawling job and increment the number of URLs crawled:
 		jobResult := result.(*crawlerJobResult)
@@ -71,7 +73,7 @@ func onURLCrawled(crawler *Crawler) {
 
 			// If we never crawled that url, then we do it now:
 			if !crawler.checkedUrls[url] {
-				fmt.Println("crawler::onURLCrawled() - Added for processing: ", url)
+				fmt.Fprintln(os.Stderr, "crawler::onURLCrawled() - Added for processing: ", result.GetJob(), " - ", url)
 				crawler.pool.AddJob(&crawlerJob{url: url})
 				crawler.checkedUrls[url] = true
 			}

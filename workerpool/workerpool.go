@@ -1,7 +1,6 @@
 package workerpool
 
 import (
-	"fmt"
 	"sync"
 )
 
@@ -63,7 +62,7 @@ func (pool *WorkerPool) AddJob(job Job) {
 // EndJobs tells the Worker Pool that there are no more jobs incoming
 // This internally closes the channel for incoming jobs
 func (pool *WorkerPool) EndJobs() {
-	fmt.Println("fechei pending jobs")
+	//fmt.Println("fechei pending jobs")
 	close(pool.pendingJobs)
 }
 
