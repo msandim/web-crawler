@@ -1,8 +1,6 @@
 package workerpool
 
 import (
-	"fmt"
-	"os"
 	"sync"
 )
 
@@ -50,24 +48,28 @@ func (pool *WorkerPool) Run() {
 	go waitForWorkersRoutine(pool)
 }
 
-// AddJob adds a job to the pool of workers:
+// AddJob adds a job to the pool of workers.
 func (pool *WorkerPool) AddJob(job Job) {
-	select {
-	case pool.pendingJobs <- job: // some other worker can do it:
 
-	default: // if the channel is full, do the job synchronously
-		fmt.Fprintln(os.Stderr, "- Channel full, gonna do synchronously: ", job)
-		result := job.Process()
-		fmt.Fprintln(os.Stderr, "- synchronously: Finished doing the job", job)
-		pool.finishedJobs <- result
-		fmt.Fprintln(os.Stderr, "- synchronously: Finished putting in results", job)
-	}
+	go func() { pool.pendingJobs <- job }()
+
+	/*
+		select {
+		case pool.pendingJobs <- job: // some other worker can do it:
+
+		default: // if the channel is full, do the job synchronously
+			fmt.Fprintln(os.Stderr, "- Channel full, gonna do synchronously: ", job)
+			result := job.Process()
+			fmt.Fprintln(os.Stderr, "- synchronously: Finished doing the job", job)
+			pool.finishedJobs <- result
+			fmt.Fprintln(os.Stderr, "- synchronously: Finished putting in results", job)
+		} */
 }
 
 // EndJobs tells the Worker Pool that there are no more jobs incoming
 // This internally closes the channel for incoming jobs
 func (pool *WorkerPool) EndJobs() {
-	fmt.Println("fechei pending jobs")
+	//fmt.Println("fechei pending jobs")
 	close(pool.pendingJobs)
 }
 
@@ -75,20 +77,20 @@ func workerRoutine(pool *WorkerPool) {
 	// While there are jobs to process:
 	for job := range pool.pendingJobs {
 		// Add more jobs to chan jobs:
-		fmt.Fprintln(os.Stderr, "workerroutine: gonna do", job)
+		//fmt.Fprintln(os.Stderr, "workerroutine: gonna do", job)
 		result := job.Process()
-		fmt.Fprintln(os.Stderr, "workerroutine: finished doing the job", job)
+		//fmt.Fprintln(os.Stderr, "workerroutine: finished doing the job", job)
 		pool.finishedJobs <- result
-		fmt.Fprintln(os.Stderr, "workerroutine: Finished putting in results", job)
+		//fmt.Fprintln(os.Stderr, "workerroutine: Finished putting in results", job)
 	}
 
 	pool.workersActive.Done()
-	fmt.Println("finished worker routine")
+	//fmt.Println("finished worker routine")
 }
 
 func waitForWorkersRoutine(pool *WorkerPool) {
-	fmt.Println("à espera que os workers terminem")
+	//fmt.Println("à espera que os workers terminem")
 	pool.workersActive.Wait()
-	fmt.Println("os workers terminaram")
+	//fmt.Println("os workers terminaram")
 	close(pool.finishedJobs)
 }

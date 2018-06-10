@@ -102,13 +102,3 @@ func getHref(token html.Token) (url string, ok bool) {
 	}
 	return "", false
 }
-
-/*
-func parseURL(urlArg string) (domain, path string, err error) {
-	u, err := url.Parse(urlArg)
-	if err != nil {
-		return "", "", errors.New("fetcher::parseURL() - Error: failed to parse url: " + urlArg)
-	}
-	return u.Hostname(), u.EscapedPath(), nil
-}
-*/
