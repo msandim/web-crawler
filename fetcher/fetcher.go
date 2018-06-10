@@ -50,7 +50,7 @@ func (fetcher *HTTPFetcher) Fetch(urlArg string) []string {
 		return urls
 	}
 	if resp.StatusCode != http.StatusOK {
-		fmt.Fprintln(os.Stderr, "HTTPFetcher::fetch() - Error: Failed to GET: ", urlArg, " with error code: "+resp.Status)
+		fmt.Fprintln(os.Stderr, "HTTPFetcher::fetch() - Error: Failed to GET: ", urlArg, " with error code: ", resp.Status)
 		return urls
 	}
 
