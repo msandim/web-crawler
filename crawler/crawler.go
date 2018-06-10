@@ -2,6 +2,7 @@ package crawler
 
 import (
 	"fmt"
+	"webcrawler/fetcher"
 	"webcrawler/workerpool"
 )
 
@@ -12,8 +13,7 @@ type Crawler struct {
 	results chan workerpool.JobResult
 
 	// Parameters related to the crawling process:
-	domain   string
-	maxDepth int
+	domain string
 
 	// Variables for the crawler's state:
 	nURLsCrawled int
@@ -21,8 +21,12 @@ type Crawler struct {
 	finishedFlag chan bool
 }
 
+var pageFetcher fetcher.Fetcher
+
 // New creates a Crawler struct given the arguments and returns a pointer to it.
-func New(nWorkers int, domain string, maxDepth int) *Crawler {
+func New(nWorkers int, rateLimit int, domain string) *Crawler {
+	pageFetcher = fetcher.NewHTTPFetcher(rateLimit)
+
 	jobs := make(chan workerpool.Job)
 	results := make(chan workerpool.JobResult)
 	return &Crawler{
@@ -30,7 +34,6 @@ func New(nWorkers int, domain string, maxDepth int) *Crawler {
 		//pendingURLs: jobs,
 		results:      results,
 		domain:       domain,
-		maxDepth:     maxDepth,
 		checkedUrls:  make(map[string]bool),
 		finishedFlag: make(chan bool),
 	}

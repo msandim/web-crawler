@@ -6,10 +6,10 @@ import (
 	"webcrawler/crawler"
 )
 
-func parseArguments() (nWorkers int, domain string, maxDepth int) {
+func parseArguments() (nWorkers int, rateLimit int, domain string) {
 	flag.IntVar(&nWorkers, "nworkers", 4, "the number of workers to crawl the domain")
+	flag.IntVar(&rateLimit, "ratelimit", 4, "the number of HTTP requests that can be done at the same time")
 	flag.StringVar(&domain, "domain", "", "the domain to crawl")
-	flag.IntVar(&maxDepth, "depth", 5, "the maximum depth of domain crawling")
 	flag.Parse()
 
 	// TODO: check if the domain is valid, and the ints > 0
@@ -17,9 +17,9 @@ func parseArguments() (nWorkers int, domain string, maxDepth int) {
 }
 
 func main() {
-	nWorkers, domain, maxDepth := parseArguments()
+	nWorkers, rateLimit, domain := parseArguments()
 
-	fmt.Println("nworkers: ", nWorkers, " domain: ", domain, " maxDepth: ", maxDepth)
-	crawler := crawler.New(nWorkers, domain, maxDepth)
+	fmt.Println("nworkers: ", nWorkers, " ratelimit: ", rateLimit, " domain: ", domain)
+	crawler := crawler.New(nWorkers, rateLimit, domain)
 	crawler.Run()
 }

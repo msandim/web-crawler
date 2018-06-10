@@ -22,8 +22,6 @@ type WorkerPool struct {
 	workersActive *sync.WaitGroup
 }
 
-var nJobsActive sync.Mutex
-
 // New generates a WorkerPool struct and runs "nWorkers" workers
 func New(nWorkers int, jobs chan Job, jobResults chan JobResult) *WorkerPool {
 
