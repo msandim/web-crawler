@@ -21,7 +21,7 @@ type Crawler struct {
 	finishedFlag chan bool
 }
 
-// New generates a Crawler struct:
+// New creates a Crawler struct given the arguments and returns a pointer to it.
 func New(nWorkers int, domain string, maxDepth int) *Crawler {
 	jobs := make(chan workerpool.Job, 10)
 	results := make(chan workerpool.JobResult, 10)
