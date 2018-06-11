@@ -100,7 +100,7 @@ func (fetcher *HTTPFetcher) Fetch(urlArg string) []string {
 }
 
 func isChildURLValid(childURL *url.URL, fatherURL url.URL) bool {
-	// Only crawl this new URL its domain is empty (e.g. "/otherpage") or if the domain of the url is the same:
+	// Only crawl this new URL if its domain is empty (e.g. "/otherpage") or if the domain of the url is the same:
 	if childURL.Hostname() == "" || childURL.Hostname() == fatherURL.Hostname() {
 		childURL.Host = fatherURL.Host
 		childURL.Fragment = "" // delete fragments (e.g. #paragraph1)
