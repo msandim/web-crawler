@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"golang.org/x/net/html"
@@ -55,9 +56,15 @@ func (fetcher *HTTPFetcher) Fetch(urlArg string) []string {
 		return []string{}
 	}
 
-	body := resp.Body
-	defer body.Close() // Close body when finishing reading from it
-	tokenizer := html.NewTokenizer(body)
+	defer resp.Body.Close() // Close body when finishing reading from it
+
+	// Only proceed if it's an HTML document:
+	if !strings.Contains(resp.Header.Get("Content-type"), "text/html") {
+		fmt.Fprintln(os.Stderr, "HTTPFetcher::fetch() - Warning: Content type of ", urlArg, " is ", resp.Header.Get("Content-type"))
+		return []string{}
+	}
+
+	tokenizer := html.NewTokenizer(resp.Body)
 
 	for {
 		tokenType := tokenizer.Next()
