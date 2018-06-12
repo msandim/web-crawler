@@ -22,7 +22,7 @@ type WorkerPool struct {
 	workersActive *sync.WaitGroup
 }
 
-// New generates a WorkerPool struct and runs "nWorkers" workers
+// New generates a WorkerPool struct and runs "nWorkers" workers.
 func New(nWorkers int, jobs chan Job, jobResults chan JobResult) *WorkerPool {
 
 	pool := &WorkerPool{
@@ -35,9 +35,9 @@ func New(nWorkers int, jobs chan Job, jobResults chan JobResult) *WorkerPool {
 	return pool
 }
 
-// Run initiates the Worker Pool:
+// Run initiates the Worker Pool.
 func (pool *WorkerPool) Run() {
-	// Create a go routine for each worker:
+	// Create a goroutine for each worker:
 	for i := 0; i < pool.nWorkers; i++ {
 		pool.workersActive.Add(1)
 		go workerRoutine(pool)
@@ -48,47 +48,29 @@ func (pool *WorkerPool) Run() {
 
 // AddJob adds a job to the pool of workers.
 func (pool *WorkerPool) AddJob(job Job) {
-
 	go func() { pool.pendingJobs <- job }()
-
-	/*
-		select {
-		case pool.pendingJobs <- job: // some other worker can do it:
-
-		default: // if the channel is full, do the job synchronously
-			fmt.Fprintln(os.Stderr, "- Channel full, gonna do synchronously: ", job)
-			result := job.Process()
-			fmt.Fprintln(os.Stderr, "- synchronously: Finished doing the job", job)
-			pool.finishedJobs <- result
-			fmt.Fprintln(os.Stderr, "- synchronously: Finished putting in results", job)
-		} */
 }
 
 // EndJobs tells the Worker Pool that there are no more jobs incoming
-// This internally closes the channel for incoming jobs
+// This internally closes the channel for incoming jobs.
 func (pool *WorkerPool) EndJobs() {
-	//fmt.Println("fechei pending jobs")
 	close(pool.pendingJobs)
 }
 
+// workerRoutine corresponds to the routine in which a worker runs until it is done.
 func workerRoutine(pool *WorkerPool) {
 	// While there are jobs to process:
 	for job := range pool.pendingJobs {
-		// Add more jobs to chan jobs:
-		//fmt.Fprintln(os.Stderr, "workerroutine: gonna do", job)
 		result := job.Process()
-		//fmt.Fprintln(os.Stderr, "workerroutine: finished doing the job", job)
 		pool.finishedJobs <- result
-		//fmt.Fprintln(os.Stderr, "workerroutine: Finished putting in results", job)
 	}
 
+	// Mark this worker as finished:
 	pool.workersActive.Done()
-	//fmt.Println("finished worker routine")
 }
 
+// waitForWorkersRoutine corresponds to a routine that waits until all workers finish.
 func waitForWorkersRoutine(pool *WorkerPool) {
-	//fmt.Println("à espera que os workers terminem")
 	pool.workersActive.Wait()
-	//fmt.Println("os workers terminaram")
 	close(pool.finishedJobs)
 }
