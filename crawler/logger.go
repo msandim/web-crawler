@@ -13,9 +13,9 @@ type logger interface {
 type printer struct{}
 
 func (log printer) logOutput(msg ...interface{}) {
-	fmt.Println(msg)
+	fmt.Println(msg...)
 }
 
 func (log printer) logError(msg ...interface{}) {
-	fmt.Fprintln(os.Stderr, msg)
+	fmt.Fprintln(os.Stderr, msg...)
 }

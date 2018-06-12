@@ -1,7 +1,6 @@
 package crawler
 
 import (
-	"fmt"
 	"webcrawler/workerpool"
 )
 
@@ -15,10 +14,10 @@ type crawlerJobResult struct {
 }
 
 func (job *crawlerJob) Process() workerpool.JobResult {
-	obtainedURLs, err := pageFetcher.Fetch(job.url)
+	obtainedURLs, errs := pageFetcher.Fetch(job.url)
 
-	if err != nil {
-		fmt.Println(err)
+	for _, err := range errs {
+		log.logError(err)
 	}
 
 	result := &crawlerJobResult{urls: obtainedURLs, job: job}
