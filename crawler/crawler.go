@@ -21,6 +21,7 @@ type Crawler struct {
 	finishedFlag chan bool
 }
 
+// Responsable to know how to fetch a page (HTTP request in production or mocked in testing):
 var pageFetcher fetcher.Fetcher
 
 // New creates a Crawler struct given the arguments and returns a pointer to it.
