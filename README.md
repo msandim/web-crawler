@@ -4,11 +4,11 @@ Implementation of a web crawler in Go. The program searches for links to interna
 
 ## Compiling 
 
-```go build```
+```make build```
 
 ## Run tests
 
-```go test -v ./...```
+```make test```
 
 ## Example usage
 
