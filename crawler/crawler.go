@@ -1,7 +1,6 @@
 package crawler
 
 import (
-	"fmt"
 	"webcrawler/fetcher"
 	"webcrawler/workerpool"
 )
@@ -23,6 +22,8 @@ type Crawler struct {
 
 // Responsable to know how to fetch a page (HTTP request in production or mocked in testing):
 var pageFetcher fetcher.Fetcher
+
+var log logger = printer{}
 
 // New creates a Crawler struct given the arguments and returns a pointer to it.
 func New(nWorkers int, rateLimit int, domain string) *Crawler {
@@ -62,10 +63,8 @@ func onURLCrawled(crawler *Crawler) {
 	//fmt.Println("crawler::onURLCrawled() - Vou começar a receber resultados")
 	for result := range crawler.results {
 
-		//fmt.Println(result.GetJob())
-		//fmt.Fprintln(os.Stderr, "crawler::onURLCrawled() - Processed: ", result.GetJob())
 		job := result.GetJob().(*crawlerJob)
-		fmt.Println(". ", job.url)
+		log.logOutput(". ", job.url)
 
 		// Get the result from crawling job and increment the number of URLs crawled:
 		jobResult := result.(*crawlerJobResult)
@@ -74,11 +73,10 @@ func onURLCrawled(crawler *Crawler) {
 		// Iterate over the URLs on the page we obtained:
 		for _, url := range jobResult.urls {
 
-			fmt.Println("  -> ", url)
+			log.logOutput("  -> ", url)
 
 			// If we never crawled that url, then we do it now:
 			if !crawler.checkedUrls[url] {
-				//fmt.Fprintln(os.Stderr, "crawler::onURLCrawled() - Added for processing: ", result.GetJob(), " - ", url)
 				crawler.pool.AddJob(&crawlerJob{url: url})
 				crawler.checkedUrls[url] = true
 			}
