@@ -16,20 +16,21 @@ type JobResult interface {
 
 // WorkerPool is
 type WorkerPool struct {
-	nWorkers      int
-	pendingJobs   chan Job
-	finishedJobs  chan JobResult
-	workersActive *sync.WaitGroup
+	nWorkers       int
+	pendingJobs    chan Job
+	pendingAddJobs *sync.WaitGroup
+	finishedJobs   chan JobResult
+	workersActive  *sync.WaitGroup
 }
 
 // New generates a WorkerPool struct and runs "nWorkers" workers.
-func New(nWorkers int, jobs chan Job, jobResults chan JobResult) *WorkerPool {
-
+func New(nWorkers int) *WorkerPool {
 	pool := &WorkerPool{
-		nWorkers:      nWorkers,
-		pendingJobs:   jobs,
-		finishedJobs:  jobResults,
-		workersActive: &sync.WaitGroup{},
+		nWorkers:       nWorkers,
+		pendingJobs:    make(chan Job),
+		pendingAddJobs: &sync.WaitGroup{},
+		finishedJobs:   make(chan JobResult),
+		workersActive:  &sync.WaitGroup{},
 	}
 
 	return pool
@@ -46,14 +47,26 @@ func (pool *WorkerPool) Run() {
 	go waitForWorkersRoutine(pool)
 }
 
+// GetResultsChannel returns the channel from which job results can we collected.
+func (pool *WorkerPool) GetResultsChannel() chan JobResult {
+	return pool.finishedJobs
+}
+
 // AddJob adds a job to the pool of workers.
 func (pool *WorkerPool) AddJob(job Job) {
-	go func() { pool.pendingJobs <- job }()
+	pool.pendingAddJobs.Add(1)
+	go func() {
+		pool.pendingJobs <- job
+		pool.pendingAddJobs.Done()
+	}()
 }
 
 // EndJobs tells the Worker Pool that there are no more jobs incoming
 // This internally closes the channel for incoming jobs.
+// This function call may block if there are jobs waiting to be added to the pendingJobs channel
+// (as a result of AddJob()).
 func (pool *WorkerPool) EndJobs() {
+	pool.pendingAddJobs.Wait()
 	close(pool.pendingJobs)
 }
 

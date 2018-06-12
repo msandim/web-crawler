@@ -26,13 +26,11 @@ var pageFetcher fetcher.Fetcher
 // New creates a Crawler struct given the arguments and returns a pointer to it.
 func New(nWorkers int, rateLimit int, domain string) *Crawler {
 	pageFetcher = fetcher.NewHTTPFetcher(rateLimit)
+	pool := workerpool.New(nWorkers)
 
-	jobs := make(chan workerpool.Job)
-	results := make(chan workerpool.JobResult)
 	return &Crawler{
-		pool: workerpool.New(nWorkers, jobs, results),
-		//pendingURLs: jobs,
-		results:      results,
+		pool:         pool,
+		results:      pool.GetResultsChannel(),
 		domain:       domain,
 		checkedUrls:  make(map[string]bool),
 		finishedFlag: make(chan bool),
