@@ -20,14 +20,18 @@ type Fetcher interface {
 // HTTPFetcher implements the Fetcher interface and sends an HTTP GET to fetch
 // the contents of an url.
 type HTTPFetcher struct {
-	rateLimiter *RateLimiter
+	rateLimiter    *RateLimiter
+	timeoutSeconds int
 }
 
 // NewHTTPFetcher returns a new HTTPFetcher with a given rate limit
 // The rate limit corresponds to the number of concurrent requests
 // that can be done.
-func NewHTTPFetcher(rateLimit int) *HTTPFetcher {
-	return &HTTPFetcher{rateLimiter: NewRateLimiter(rateLimit)}
+func NewHTTPFetcher(rateLimit int, timeoutSeconds int) *HTTPFetcher {
+	return &HTTPFetcher{
+		rateLimiter:    NewRateLimiter(rateLimit),
+		timeoutSeconds: timeoutSeconds,
+	}
 }
 
 // Fetch sends an HTTP GET to fetch the contents of an url.
@@ -45,7 +49,7 @@ func (fetcher *HTTPFetcher) Fetch(urlArg *urlwrapper.URLWrapper) ([]string, []er
 	}
 
 	// Define a custom http client that has a timeout and get the HTML code:
-	var httpClient = &http.Client{Timeout: 10 * time.Second}
+	var httpClient = &http.Client{Timeout: time.Duration(fetcher.timeoutSeconds) * time.Second}
 
 	fetcher.rateLimiter.Limit() // limit number of GET requests to be done at the same time
 	resp, err := httpClient.Get(urlArg.URLForRequest)

@@ -5,7 +5,7 @@ import (
 	"webcrawler/workerpool"
 )
 
-// Crawler is
+// Crawler is a strucutre that saves the fields for the crawling
 type Crawler struct {
 	// Parameters regarding the pool, with access to the jobs and results channel
 	pool    *workerpool.WorkerPool
@@ -27,8 +27,8 @@ var pageFetcher fetcher.Fetcher
 var log logger = &printer{}
 
 // New creates a Crawler struct given the arguments, including a rate limiter, and returns a pointer to it.
-func New(nWorkers int, rateLimit int, domain string) *Crawler {
-	pageFetcher = fetcher.NewHTTPFetcher(rateLimit)
+func New(nWorkers int, rateLimit int, timeoutSeconds int, domain string) *Crawler {
+	pageFetcher = fetcher.NewHTTPFetcher(rateLimit, timeoutSeconds)
 	pool := workerpool.New(nWorkers)
 
 	return &Crawler{

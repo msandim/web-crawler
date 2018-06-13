@@ -9,9 +9,10 @@ import (
 func TestCrawler1(t *testing.T) {
 	nWorkers := 5
 	rateLimit := 4
+	timeoutSeconds := 10
 	domain := "http://www.monzo.com/"
 
-	crawler := New(nWorkers, rateLimit, domain)
+	crawler := New(nWorkers, rateLimit, timeoutSeconds, domain)
 
 	if crawler.pool == nil {
 		t.Errorf("Pool was not initiliazed")

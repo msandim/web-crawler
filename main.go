@@ -8,9 +8,10 @@ import (
 	"webcrawler/crawler"
 )
 
-func parseArguments() (nWorkers int, rateLimit int, domain string) {
+func parseArguments() (nWorkers int, rateLimit int, timeoutSeconds int, domain string) {
 	flag.IntVar(&nWorkers, "nworkers", 4, "the number of workers to crawl the domain")
 	flag.IntVar(&rateLimit, "ratelimit", 4, "the number of HTTP requests that can be done at the same time")
+	flag.IntVar(&timeoutSeconds, "timeoutseconds", 10, "The number of seconds to wait for a HTTP GET request")
 	flag.StringVar(&domain, "domain", "", "the domain to crawl")
 	flag.Parse()
 
@@ -24,6 +25,11 @@ func parseArguments() (nWorkers int, rateLimit int, domain string) {
 		os.Exit(-1)
 	}
 
+	if !isTimeoutSecondsValid(timeoutSeconds) {
+		fmt.Fprintln(os.Stderr, "main::parseArguments() - Error: Timeout (seconds) is invalid: ", rateLimit)
+		os.Exit(-1)
+	}
+
 	if !isDomainValid(domain) {
 		fmt.Fprintln(os.Stderr, "main::parseArguments() - Error: Domain is invalid: ", domain)
 		os.Exit(-1)
@@ -32,10 +38,10 @@ func parseArguments() (nWorkers int, rateLimit int, domain string) {
 }
 
 func main() {
-	nWorkers, rateLimit, domain := parseArguments()
+	nWorkers, rateLimit, timeoutSeconds, domain := parseArguments()
 
-	fmt.Println("nworkers: ", nWorkers, " ratelimit: ", rateLimit, " domain: ", domain)
-	crawler := crawler.New(nWorkers, rateLimit, domain)
+	fmt.Println("nworkers: ", nWorkers, " ratelimit: ", rateLimit, " timeoutseconds: ", timeoutSeconds, " domain: ", domain)
+	crawler := crawler.New(nWorkers, rateLimit, timeoutSeconds, domain)
 	crawler.Run()
 }
 
@@ -45,6 +51,10 @@ func isnWorkersValid(nWorkers int) bool {
 
 func isRateLimitValid(rateLimit int) bool {
 	return rateLimit > 0
+}
+
+func isTimeoutSecondsValid(timeoutSeconds int) bool {
+	return timeoutSeconds > 0
 }
 
 func isDomainValid(domain string) bool {

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 	"webcrawler/fetcher/URLWrapper"
 )
 
@@ -12,7 +13,7 @@ func TestHTTPFetcher_Fetch_InvalidURL(t *testing.T) {
 	domain := "%"
 	errorMsg := "HTTPFetcher::fetch() - Error: failed to parse the URL to fetch: " + domain
 
-	fetcher := NewHTTPFetcher(4)
+	fetcher := NewHTTPFetcher(4, 10)
 	urls, errs := fetcher.Fetch(urlwrapper.New(domain))
 
 	if len(urls) != 0 {
@@ -32,8 +33,33 @@ func TestHTTPFetcher_Fetch_InvalidGET(t *testing.T) {
 	domain := "123"
 	errorMsg := "HTTPFetcher::fetch() - Error: Failed to GET: " + domain
 
-	fetcher := NewHTTPFetcher(4)
+	fetcher := NewHTTPFetcher(4, 10)
 	urls, errs := fetcher.Fetch(urlwrapper.New(domain))
+
+	if len(urls) != 0 {
+		t.Errorf("Length of URLs was invalid. Expected: %d, Got: %d", 0, len(urls))
+	}
+
+	if len(errs) != 1 {
+		t.Errorf("Length of errors was invalid. Expected: %d, Got: %d", 1, len(errs))
+	}
+
+	if errs[0].Error() != errorMsg {
+		t.Errorf("Error message was not valid\nExpected: %s, Got: %s", errorMsg, errs[0])
+	}
+}
+
+func TestHTTPFetcher_Fetch_TimeoutGET(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(2 * time.Second)
+	}))
+	defer server.Close()
+
+	domain := "http://monzo.com/"
+	errorMsg := "HTTPFetcher::fetch() - Error: Failed to GET: " + domain
+
+	fetcher := NewHTTPFetcher(4, 1)
+	urls, errs := fetcher.Fetch(urlwrapper.NewTesting(domain, server.URL))
 
 	if len(urls) != 0 {
 		t.Errorf("Length of URLs was invalid. Expected: %d, Got: %d", 0, len(urls))
@@ -57,7 +83,7 @@ func TestHTTPFetcher_Fetch_ErrorMessage(t *testing.T) {
 	domain := "http://monzo.com/"
 	errorMsg := "HTTPFetcher::fetch() - Error: Failed to GET: " + domain + " with error code: 404 Not Found"
 
-	fetcher := NewHTTPFetcher(4)
+	fetcher := NewHTTPFetcher(4, 10)
 	urls, errs := fetcher.Fetch(urlwrapper.NewTesting(domain, server.URL))
 
 	if len(urls) != 0 {
@@ -82,7 +108,7 @@ func TestHTTPFetcher_Fetch_ContentType(t *testing.T) {
 	domain := "http://monzo.com/"
 	errorMsg := "HTTPFetcher::fetch() - Error: Content type of " + domain + " is application/pdf"
 
-	fetcher := NewHTTPFetcher(4)
+	fetcher := NewHTTPFetcher(4, 10)
 	urls, errs := fetcher.Fetch(urlwrapper.NewTesting(domain, server.URL))
 
 	if len(urls) != 0 {
@@ -114,7 +140,7 @@ func TestHTTPFetcher_Fetch_Errors(t *testing.T) {
 	childURL := ""
 	errorMsg := ""
 
-	fetcher := NewHTTPFetcher(4)
+	fetcher := NewHTTPFetcher(4, 10)
 	urls, errs := fetcher.Fetch(urlwrapper.NewTesting(domain, server.URL))
 
 	if len(urls) != 6 {

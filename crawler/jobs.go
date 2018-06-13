@@ -5,6 +5,8 @@ import (
 	"webcrawler/workerpool"
 )
 
+// Implementation of the Crawling Jobs for the Worker Pool:
+
 type crawlerJob struct {
 	url string
 }

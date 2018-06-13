@@ -7,7 +7,7 @@ type URLWrapper struct {
 	URLForRequest string
 }
 
-// New generates a new URLWrapper, in which the URL for HTTP requests is the same as the regular URL
+// New generates a new URLWrapper, in which the URL for HTTP requests is the same as the regular URL.
 func New(url string) *URLWrapper {
 	return &URLWrapper{
 		URL:           url,
@@ -15,7 +15,7 @@ func New(url string) *URLWrapper {
 	}
 }
 
-// NewTesting generates a new URLWrapper, with a different URL for requests
+// NewTesting generates a new URLWrapper, with a different URL for requests.
 func NewTesting(url string, urlForRequest string) *URLWrapper {
 	return &URLWrapper{
 		URL:           url,
