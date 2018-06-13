@@ -53,7 +53,7 @@ func isDomainValid(domain string) bool {
 		return false
 	}
 
-	if domainParsed.Scheme == "" || domainParsed.Hostname() == "" || domainParsed.Path == "" {
+	if domainParsed.Scheme == "" || domainParsed.Hostname() == "" {
 		return false
 	}
 
