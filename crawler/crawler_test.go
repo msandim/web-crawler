@@ -2,9 +2,45 @@ package crawler
 
 import (
 	"testing"
+	"webcrawler/fetcher"
 )
 
-func TestCrawler(t *testing.T) {
+func TestCrawler1(t *testing.T) {
+	nWorkers := 5
+	rateLimit := 4
+	domain := "http://www.monzo.com/"
+
+	crawler := New(nWorkers, rateLimit, domain)
+
+	if crawler.pool == nil {
+		t.Errorf("Pool was not initiliazed")
+	}
+
+	if crawler.results == nil || crawler.results != crawler.pool.GetResultsChannel() {
+		t.Errorf("Results channel is not initialized")
+	}
+
+	if crawler.domain != domain {
+		t.Errorf("Domain attribute was not initialized")
+	}
+
+	if crawler.checkedUrls == nil {
+		t.Errorf("checkedURLs attribute was not initialized")
+	}
+
+	if crawler.finishedFlag == nil {
+		t.Errorf("Finished flag channel was not initialized")
+	}
+
+	if pageFetcher == nil {
+		t.Errorf("PageFetcher global variable was not initialized")
+	}
+	if _, ok := pageFetcher.(*fetcher.HTTPFetcher); !ok {
+		t.Errorf("PageFetcher global variable is not set for production")
+	}
+}
+
+func TestCrawler2(t *testing.T) {
 	setUpTest()
 
 	crawler := newTesting(10, "A")
