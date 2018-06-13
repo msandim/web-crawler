@@ -8,7 +8,7 @@ Implementation of a web crawler in Go. The program searches for links to interna
 
 ## Run tests
 
-```make test```
+```make run-tests```
 
 ## Example usage
 
@@ -16,7 +16,7 @@ Implementation of a web crawler in Go. The program searches for links to interna
 
 - **nworkers:** number of workers (go routines) in the pool of workers implemented.
 - **ratelimit:** number of workers that can perform an HTTP GET request at the same time.
-- **domain:** domain to crawl and obtain the sitemap. URLs without a path will be considered invalid: use `https://www.random.org/` and not `https://www.random.org`.
+- **domain:** domain to crawl and obtain the sitemap.
 
 The program outputs the sitemap to stdout with the following format:
 ```
