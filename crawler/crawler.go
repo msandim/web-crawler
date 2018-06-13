@@ -23,11 +23,24 @@ type Crawler struct {
 // Responsable to know how to fetch a page (HTTP request in production or mocked in testing):
 var pageFetcher fetcher.Fetcher
 
-var log logger = printer{}
+var log logger = &printer{}
 
-// New creates a Crawler struct given the arguments and returns a pointer to it.
+// New creates a Crawler struct given the arguments, including a rate limiter, and returns a pointer to it.
 func New(nWorkers int, rateLimit int, domain string) *Crawler {
 	pageFetcher = fetcher.NewHTTPFetcher(rateLimit)
+	pool := workerpool.New(nWorkers)
+
+	return &Crawler{
+		pool:         pool,
+		results:      pool.GetResultsChannel(),
+		domain:       domain,
+		checkedUrls:  make(map[string]bool),
+		finishedFlag: make(chan bool),
+	}
+}
+
+// newTesting creates Crawler struct given the arguments and returns a pointer to it (used only for testing).
+func newTesting(nWorkers int, domain string) *Crawler {
 	pool := workerpool.New(nWorkers)
 
 	return &Crawler{
@@ -64,7 +77,9 @@ func onURLCrawled(crawler *Crawler) {
 	for result := range crawler.results {
 
 		job := result.GetJob().(*crawlerJob)
-		log.logOutput(". ", job.url)
+		parentURL := job.url
+		childrenURLs := []string{}
+		//log.logOutput(". " + job.url)
 
 		// Get the result from crawling job and increment the number of URLs crawled:
 		jobResult := result.(*crawlerJobResult)
@@ -73,7 +88,7 @@ func onURLCrawled(crawler *Crawler) {
 		// Iterate over the URLs on the page we obtained:
 		for _, url := range jobResult.urls {
 
-			log.logOutput("  -> ", url)
+			childrenURLs = append(childrenURLs, url)
 
 			// If we never crawled that url, then we do it now:
 			if !crawler.checkedUrls[url] {
@@ -81,6 +96,8 @@ func onURLCrawled(crawler *Crawler) {
 				crawler.checkedUrls[url] = true
 			}
 		}
+
+		log.logPage(parentURL, childrenURLs)
 
 		// if all the URLs launched for crawling had their crawling processes ended:
 		if len(crawler.checkedUrls) == crawler.nURLsCrawled {

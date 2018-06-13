@@ -6,16 +6,19 @@ import (
 )
 
 type logger interface {
-	logOutput(msg ...interface{})
-	logError(msg ...interface{})
+	logPage(parentURL string, childrenURLs []string)
+	logError(msg string)
 }
 
 type printer struct{}
 
-func (log printer) logOutput(msg ...interface{}) {
-	fmt.Println(msg...)
+func (log *printer) logPage(parentURL string, childrenURLs []string) {
+	fmt.Println(". " + parentURL)
+	for _, childURL := range childrenURLs {
+		fmt.Println("  -> " + childURL)
+	}
 }
 
-func (log printer) logError(msg ...interface{}) {
-	fmt.Fprintln(os.Stderr, msg...)
+func (log *printer) logError(msg string) {
+	fmt.Fprintln(os.Stderr, msg)
 }

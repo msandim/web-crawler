@@ -17,7 +17,7 @@ func (job *crawlerJob) Process() workerpool.JobResult {
 	obtainedURLs, errs := pageFetcher.Fetch(job.url)
 
 	for _, err := range errs {
-		log.logError(err)
+		log.logError(err.Error())
 	}
 
 	result := &crawlerJobResult{urls: obtainedURLs, job: job}
