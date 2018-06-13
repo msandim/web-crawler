@@ -34,7 +34,8 @@ func NewHTTPFetcher(rateLimit int, timeoutSeconds int) *HTTPFetcher {
 	}
 }
 
-// Fetch sends an HTTP GET to fetch the contents of an url.
+// Fetch sends an HTTP GET to fetch the contents of an url and determine what
+// urls are contained on that page.
 func (fetcher *HTTPFetcher) Fetch(urlArg *urlwrapper.URLWrapper) ([]string, []error) {
 	// URLs found in this page: avoid duplicates:
 	urlsFound := []string{}
@@ -114,6 +115,7 @@ func (fetcher *HTTPFetcher) Fetch(urlArg *urlwrapper.URLWrapper) ([]string, []er
 	}
 }
 
+// isChildURLValid checks if the child URL is valid given the aprent URL (e.g. if it's the same domain).
 func isChildURLValid(childURL *url.URL, fatherURL url.URL) bool {
 	// Only crawl this new URL if its domain is empty (e.g. "/otherpage") or if the domain of the url is the same:
 	if childURL.Hostname() == "" || childURL.Hostname() == fatherURL.Hostname() {
@@ -135,7 +137,7 @@ func isChildURLValid(childURL *url.URL, fatherURL url.URL) bool {
 	return false
 }
 
-// getHref gets the href attribute from an <a> token
+// getHref gets the href attribute from an <a> token.
 func getHref(token html.Token) (url string, ok bool) {
 	// Iterate over all of the Token's attributes until we find an "href":
 	for _, v := range token.Attr {

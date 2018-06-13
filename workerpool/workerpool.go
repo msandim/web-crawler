@@ -14,7 +14,7 @@ type JobResult interface {
 	GetJob() Job
 }
 
-// WorkerPool is
+// WorkerPool is an implementation of a Pool of Threads (in this case goroutines).
 type WorkerPool struct {
 	nWorkers       int
 	pendingJobs    chan Job

@@ -1,7 +1,7 @@
 package urlwrapper
 
 // URLWrapper is a wrapper around a URL, that has a different URL for URL analysis
-// and a different one to perform HTTP requests.
+// and a different one to perform HTTP requests (mainly used for testinr purposes).
 type URLWrapper struct {
 	URL           string
 	URLForRequest string

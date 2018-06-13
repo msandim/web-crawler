@@ -5,7 +5,7 @@ import (
 	"web-crawler/workerpool"
 )
 
-// Crawler is a strucutre that saves the fields for the crawling
+// Crawler is a strucutre that contains the specifications of the crawling process.
 type Crawler struct {
 	// Parameters regarding the pool, with access to the jobs and results channel
 	pool    *workerpool.WorkerPool
@@ -20,13 +20,13 @@ type Crawler struct {
 	finishedFlag chan bool
 }
 
-// Responsable to know how to fetch a page (HTTP request in production or mocked in testing):
+// Responsable to know how to fetch a page (through HTTP requests in production or mocked in testing):
 var pageFetcher fetcher.Fetcher
 
 // Responsable to know how to log the results:
 var log logger = &printer{}
 
-// New creates a Crawler struct given the arguments, including a rate limiter, and returns a pointer to it.
+// New creates a Crawler struct given the arguments and returns a pointer to it.
 func New(nWorkers int, rateLimit int, timeoutSeconds int, domain string) *Crawler {
 	pageFetcher = fetcher.NewHTTPFetcher(rateLimit, timeoutSeconds)
 	pool := workerpool.New(nWorkers)
@@ -72,7 +72,7 @@ func (crawler *Crawler) Run() {
 
 // onUrlCrawled is a routine that iterates over the results returned by the Worker Pool
 // and generates new crawling tasks for the Workers.
-// In this case, new urls to crawl that haven't been checked before
+// In this case, new urls to crawl that haven't been checked before.
 func onURLCrawled(crawler *Crawler) {
 	for result := range crawler.results {
 
