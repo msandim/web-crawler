@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-	"webcrawler/crawler"
+	"web-crawler/crawler"
 )
 
 func parseArguments() (nWorkers int, rateLimit int, timeoutSeconds int, domain string) {

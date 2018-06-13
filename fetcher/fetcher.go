@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"strings"
 	"time"
-	"webcrawler/fetcher/URLWrapper"
+	"web-crawler/fetcher/URLWrapper"
 
 	"golang.org/x/net/html"
 )

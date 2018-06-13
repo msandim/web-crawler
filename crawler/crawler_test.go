@@ -2,8 +2,8 @@ package crawler
 
 import (
 	"testing"
-	"webcrawler/fetcher"
-	"webcrawler/fetcher/URLWrapper"
+	"web-crawler/fetcher"
+	"web-crawler/fetcher/URLWrapper"
 )
 
 func TestCrawler1(t *testing.T) {

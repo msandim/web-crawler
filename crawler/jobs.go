@@ -1,8 +1,8 @@
 package crawler
 
 import (
-	"webcrawler/fetcher/URLWrapper"
-	"webcrawler/workerpool"
+	"web-crawler/fetcher/URLWrapper"
+	"web-crawler/workerpool"
 )
 
 // Implementation of the Crawling Jobs for the Worker Pool:

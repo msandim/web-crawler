@@ -1,8 +1,8 @@
 package crawler
 
 import (
-	"webcrawler/fetcher"
-	"webcrawler/workerpool"
+	"web-crawler/fetcher"
+	"web-crawler/workerpool"
 )
 
 // Crawler is a strucutre that saves the fields for the crawling
