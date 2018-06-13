@@ -4,12 +4,12 @@ import (
 	"sync"
 )
 
-// Job is
+// Job is an entity that works on a specific task (the Process function).
 type Job interface {
 	Process() JobResult
 }
 
-// JobResult is
+// JobResult is a result of the task performed by Job.
 type JobResult interface {
 	GetJob() Job
 }
