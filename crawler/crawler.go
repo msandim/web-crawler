@@ -15,14 +15,15 @@ type Crawler struct {
 	domain string
 
 	// Variables for the crawler's state:
-	nURLsCrawled int
-	checkedUrls  map[string]bool
+	nURLsCrawled int             // number of URLs successfully crawled
+	checkedUrls  map[string]bool // number of URLs in which we initiated the crawling process
 	finishedFlag chan bool
 }
 
 // Responsable to know how to fetch a page (HTTP request in production or mocked in testing):
 var pageFetcher fetcher.Fetcher
 
+// Responsable to know how to log the results:
 var log logger = &printer{}
 
 // New creates a Crawler struct given the arguments, including a rate limiter, and returns a pointer to it.
@@ -73,13 +74,11 @@ func (crawler *Crawler) Run() {
 // and generates new crawling tasks for the Workers.
 // In this case, new urls to crawl that haven't been checked before
 func onURLCrawled(crawler *Crawler) {
-	//fmt.Println("crawler::onURLCrawled() - Vou começar a receber resultados")
 	for result := range crawler.results {
 
 		job := result.GetJob().(*crawlerJob)
 		parentURL := job.url
 		childrenURLs := []string{}
-		//log.logOutput(". " + job.url)
 
 		// Get the result from crawling job and increment the number of URLs crawled:
 		jobResult := result.(*crawlerJobResult)
