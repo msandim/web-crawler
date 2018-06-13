@@ -6,53 +6,57 @@ import (
 	"net/url"
 	"strings"
 	"time"
+	"webcrawler/fetcher/URLWrapper"
 
 	"golang.org/x/net/html"
 )
 
 // Fetcher represents an entity that knows of to fetch the URLs
-// contained in the HTML page of an URL
+// contained in the HTML page of an URL.
 type Fetcher interface {
-	Fetch(url string) ([]string, []error)
+	Fetch(urlArg *urlwrapper.URLWrapper) ([]string, []error)
 }
 
 // HTTPFetcher implements the Fetcher interface and sends an HTTP GET to fetch
-// the contents of an url
+// the contents of an url.
 type HTTPFetcher struct {
 	rateLimiter *RateLimiter
 }
 
 // NewHTTPFetcher returns a new HTTPFetcher with a given rate limit
 // The rate limit corresponds to the number of concurrent requests
-// that can be done
+// that can be done.
 func NewHTTPFetcher(rateLimit int) *HTTPFetcher {
 	return &HTTPFetcher{rateLimiter: NewRateLimiter(rateLimit)}
 }
 
-// Fetch sends an HTTP GET to fetch the contents of an url:
-func (fetcher *HTTPFetcher) Fetch(urlArg string) ([]string, []error) {
-	// URLs found in this page: avoid duplicates
-	urlsFound := make(map[string]bool)
+// Fetch sends an HTTP GET to fetch the contents of an url.
+func (fetcher *HTTPFetcher) Fetch(urlArg *urlwrapper.URLWrapper) ([]string, []error) {
+	// URLs found in this page: avoid duplicates:
+	urlsFound := []string{}
+	urlsFoundMap := make(map[string]bool)
 	errorsFound := []error{}
 
 	// Parse the url we're trying to crawl, by extracting its url and path without url fragments:
-	parentURLParsed, err := url.Parse(urlArg)
+	parentURLParsed, err := url.Parse(urlArg.URL)
 	if err != nil {
-		errorsFound = append(errorsFound, errors.New("HTTPFetcher::fetch() - Error: failed to parse the URL to fetch: "+urlArg))
+		errorsFound = append(errorsFound, errors.New("HTTPFetcher::fetch() - Error: failed to parse the URL to fetch: "+urlArg.URL))
 		return []string{}, errorsFound
 	}
 
 	// Define a custom http client that has a timeout and get the HTML code:
 	var httpClient = &http.Client{Timeout: 10 * time.Second}
+
 	fetcher.rateLimiter.Limit() // limit number of GET requests to be done at the same time
-	resp, err := httpClient.Get(urlArg)
+	resp, err := httpClient.Get(urlArg.URLForRequest)
 	fetcher.rateLimiter.Free()
+
 	if err != nil {
-		errorsFound = append(errorsFound, errors.New("HTTPFetcher::fetch() - Error: Failed to GET: "+urlArg))
+		errorsFound = append(errorsFound, errors.New("HTTPFetcher::fetch() - Error: Failed to GET: "+urlArg.URL))
 		return []string{}, errorsFound
 	}
 	if resp.StatusCode != http.StatusOK {
-		errorsFound = append(errorsFound, errors.New("HTTPFetcher::fetch() - Error: Failed to GET: "+urlArg+" with error code: "+resp.Status))
+		errorsFound = append(errorsFound, errors.New("HTTPFetcher::fetch() - Error: Failed to GET: "+urlArg.URL+" with error code: "+resp.Status))
 		return []string{}, errorsFound
 	}
 
@@ -60,7 +64,7 @@ func (fetcher *HTTPFetcher) Fetch(urlArg string) ([]string, []error) {
 
 	// Only proceed if it's an HTML document:
 	if !strings.Contains(resp.Header.Get("Content-type"), "text/html") {
-		errorsFound = append(errorsFound, errors.New("HTTPFetcher::fetch() - Error: Content type of "+urlArg+" is "+resp.Header.Get("Content-type")))
+		errorsFound = append(errorsFound, errors.New("HTTPFetcher::fetch() - Error: Content type of "+urlArg.URL+" is "+resp.Header.Get("Content-type")))
 		return []string{}, errorsFound
 	}
 
@@ -71,7 +75,7 @@ func (fetcher *HTTPFetcher) Fetch(urlArg string) ([]string, []error) {
 
 		switch {
 		case tokenType == html.ErrorToken: // Reached the end of the document
-			return mapToSlice(urlsFound), nil
+			return urlsFound, errorsFound
 		case tokenType == html.StartTagToken:
 			token := tokenizer.Token()
 
@@ -89,7 +93,7 @@ func (fetcher *HTTPFetcher) Fetch(urlArg string) ([]string, []error) {
 
 			childURLParsed, err := url.Parse(childURL)
 			if err != nil {
-				errorsFound = append(errorsFound, errors.New("HTTPFetcher::fetch() - Warning: failed to parse the URL found: "+urlArg))
+				errorsFound = append(errorsFound, errors.New("HTTPFetcher::fetch() - Warning: failed to parse the URL found: "+childURL))
 				continue
 			}
 
@@ -98,8 +102,9 @@ func (fetcher *HTTPFetcher) Fetch(urlArg string) ([]string, []error) {
 			}
 
 			// Only add to the map of found urls if we didn't add before:
-			if _, ok := urlsFound[childURLParsed.String()]; !ok {
-				urlsFound[childURLParsed.String()] = true
+			if _, ok := urlsFoundMap[childURLParsed.String()]; !ok {
+				urlsFoundMap[childURLParsed.String()] = true
+				urlsFound = append(urlsFound, childURLParsed.String())
 			}
 		}
 	}
@@ -135,12 +140,4 @@ func getHref(token html.Token) (url string, ok bool) {
 		}
 	}
 	return "", false
-}
-
-func mapToSlice(urlMap map[string]bool) (urls []string) {
-	urls = make([]string, 0, len(urlMap))
-	for u := range urlMap {
-		urls = append(urls, u)
-	}
-	return
 }

@@ -3,6 +3,7 @@ package crawler
 import (
 	"testing"
 	"webcrawler/fetcher"
+	"webcrawler/fetcher/URLWrapper"
 )
 
 func TestCrawler1(t *testing.T) {
@@ -131,8 +132,8 @@ func setUpTest() {
 type TestFetcher struct {
 }
 
-func (fetcher *TestFetcher) Fetch(urlArg string) ([]string, []error) {
-	switch urlArg {
+func (fetcher *TestFetcher) Fetch(urlArg *urlwrapper.URLWrapper) ([]string, []error) {
+	switch urlArg.URL {
 	case "A":
 		return []string{"B", "C"}, nil
 	case "B":
