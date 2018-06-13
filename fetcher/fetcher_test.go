@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
-	"webcrawler/fetcher/URLWrapper"
+	"web-crawler/fetcher/URLWrapper"
 )
 
 func TestHTTPFetcher_Fetch_InvalidURL(t *testing.T) {
