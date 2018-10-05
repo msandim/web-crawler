@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-	"web-crawler/crawler"
+
+	"github.com/msandim/web-crawler/crawler"
 )
 
 func parseArguments() (nWorkers int, rateLimit int, timeoutSeconds int, domain string) {
 	flag.IntVar(&nWorkers, "nworkers", 4, "the number of workers to crawl the domain")
 	flag.IntVar(&rateLimit, "ratelimit", 4, "the number of HTTP requests that can be done at the same time")
 	flag.IntVar(&timeoutSeconds, "timeoutseconds", 10, "The number of seconds to wait for a HTTP GET request")
-	flag.StringVar(&domain, "domain", "", "the domain to crawl")
+	flag.StringVar(&domain, "domain", "https://www.monzo.com", "the domain to crawl")
 	flag.Parse()
 
 	if !isnWorkersValid(nWorkers) {

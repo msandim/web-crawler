@@ -1,8 +1,8 @@
 package crawler
 
 import (
-	"web-crawler/fetcher"
-	"web-crawler/workerpool"
+	"github.com/msandim/web-crawler/fetcher"
+	"github.com/msandim/web-crawler/workerpool"
 )
 
 // Crawler is a strucutre that contains the specifications of the crawling process.

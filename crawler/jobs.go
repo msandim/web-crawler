@@ -1,8 +1,8 @@
 package crawler
 
 import (
-	"web-crawler/fetcher/URLWrapper"
-	"web-crawler/workerpool"
+	"github.com/msandim/web-crawler/fetcher/urlwrapper"
+	"github.com/msandim/web-crawler/workerpool"
 )
 
 // Implementation of the Crawling Jobs for the Worker Pool:
